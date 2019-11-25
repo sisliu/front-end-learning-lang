@@ -47,7 +47,29 @@
           </span>
         </el-form-item>
       </el-tooltip>
-
+      <el-form-item prop="validCode">
+        <span class="svg-container">
+          <svg-icon icon-class="edit" />
+        </span>
+        <el-input
+          v-model.trim="loginForm.validCode"
+          type="text"
+          maxlength="4"
+          placeholder="验证码"
+          style="width: 49%;"
+          clearable
+          tabindex="3"
+          required
+          @keyup.enter.native="handleLogin('loginForm')"
+        />
+        <valid-code
+          class="valid-code"
+          :width="width"
+          :refresh="refreshMun"
+          @input="getValidCode"
+        />
+        <!-- <i class="el-icon-refresh-right i-refresh" /> -->
+      </el-form-item>
       <el-button :loading="loading" type="primary" style="width:100%;margin-bottom:30px;" @click.native.prevent="handleLogin">
         {{ $t('login.logIn') }}
       </el-button>
@@ -84,10 +106,11 @@
 import { validUsername } from '@/utils/validate'
 import LangSelect from '@/components/LangSelect'
 import SocialSign from './components/SocialSignin'
+import ValidCode from '@/components/ValidCode'
 
 export default {
   name: 'Login',
-  components: { LangSelect, SocialSign },
+  components: { LangSelect, ValidCode, SocialSign },
   data() {
     const validateUsername = (rule, value, callback) => {
       if (!validUsername(value)) {
@@ -108,6 +131,8 @@ export default {
         username: 'admin',
         password: '111111'
       },
+      width: '120px',
+      refreshMun: 0,
       loginRules: {
         username: [{ required: true, trigger: 'blur', validator: validateUsername }],
         password: [{ required: true, trigger: 'blur', validator: validatePassword }]
@@ -158,6 +183,9 @@ export default {
         this.capsTooltip = false
       }
     },
+    getValidCode(v) {
+      this.validCode = v
+    },
     showPwd() {
       if (this.passwordType === 'password') {
         this.passwordType = ''
@@ -172,13 +200,23 @@ export default {
       this.$refs.loginForm.validate(valid => {
         if (valid) {
           this.loading = true
-          this.$store.dispatch('user/login', this.loginForm)
+          const { username, password, validCode } = this.loginForm
+          if (this.validCode.toLowerCase() !== validCode.toLowerCase()) {
+            this.$message.closeAll()
+            this.$message('验证码不正确')
+            this.refreshMun = Math.random()
+            this.loading = false
+            return
+          }
+          this.$store.dispatch('user/login', { username, password })
             .then(() => {
               this.$router.push({ path: this.redirect || '/', query: this.otherQuery })
               this.loading = false
             })
             .catch(() => {
               this.loading = false
+              this.$message.closeAll()
+              this.$message.error('登录用户账号或密码错误')
             })
         } else {
           console.log('error submit!!')
@@ -236,7 +274,7 @@ $cursor: #fff;
     display: inline-block;
     height: 47px;
     width: 85%;
-
+    color: #889aa4;
     input {
       background: transparent;
       border: 0px;
@@ -264,25 +302,41 @@ $cursor: #fff;
 </style>
 
 <style lang="scss" scoped>
-$bg:#2d3a4b;
+$bg:#889aa4;
 $dark_gray:#889aa4;
 $light_gray:#eee;
-
+.set-language {
+  color: #fff;
+  position: absolute;
+  top: 3px;
+  font-size: 18px;
+  right: 0px;
+  cursor: pointer;
+}
 .login-container {
   min-height: 100%;
   width: 100%;
   background-color: $bg;
   overflow: hidden;
-
+  background-image: url("../../assets/login/preview.jpg");
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
   .login-form {
-    position: relative;
-    width: 520px;
-    max-width: 100%;
-    padding: 160px 35px 0;
-    margin: 0 auto;
-    overflow: hidden;
+   width: 429px;
+   margin: 0 auto;
+   padding: 150px 3px 20px;
   }
-
+.valid-code {
+        width: 100px;
+        height: 41px;
+        line-height: initial;
+        position: absolute;
+        margin-left: 12%;
+        margin-top: 1%;
+        display: inline-block;
+        border-radius: 5px;
+        background-color: rgba(255, 255, 255, 0.92);
+      }
   .tips {
     font-size: 14px;
     color: #fff;
@@ -312,15 +366,6 @@ $light_gray:#eee;
       margin: 0px auto 40px auto;
       text-align: center;
       font-weight: bold;
-    }
-
-    .set-language {
-      color: #fff;
-      position: absolute;
-      top: 3px;
-      font-size: 18px;
-      right: 0px;
-      cursor: pointer;
     }
   }
 
