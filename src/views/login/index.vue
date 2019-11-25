@@ -16,6 +16,7 @@
         <el-input
           ref="username"
           v-model="loginForm.username"
+          clearable
           :placeholder="$t('login.username')"
           name="username"
           type="text"
@@ -33,6 +34,7 @@
             :key="passwordType"
             ref="password"
             v-model="loginForm.password"
+            clearable
             :type="passwordType"
             :placeholder="$t('login.password')"
             name="password"
@@ -55,7 +57,7 @@
           v-model.trim="loginForm.validCode"
           type="text"
           maxlength="4"
-          placeholder="验证码"
+          :placeholder="$t('login.validCode')"
           style="width: 49%;"
           clearable
           tabindex="3"
